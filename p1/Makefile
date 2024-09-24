@@ -4,7 +4,7 @@ all up start:
 suspend pause:
 	vagrant suspend
 
-reload update:
+reload update:	stop
 	vagrant reload
 
 stop halt:
@@ -17,4 +17,4 @@ list:
 	vagrant box list
 
 delete destroy:
-	vagrant destroy
+	vagrant destroy -f
