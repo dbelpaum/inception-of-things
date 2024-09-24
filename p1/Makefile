@@ -15,3 +15,6 @@ status:
 
 list:
 	vagrant box list
+
+delete destroy:
+	vagrant destroy
