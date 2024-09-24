@@ -12,15 +12,15 @@ Vagrant.configure("2") do |config|
     dbelpaumS.vm.provider "virtualbox" do |vb|
       # vb.memory = "2048"
       # vb.cpus = 2
-      vb.memory = "512"
-      vb.cpus = 1
+      vb.memory = "1024"
+      vb.cpus = 2
     end
     # Server Script
     dbelpaumS.vm.provision "shell", inline: <<-SHELL
       echo "Installing K3s..."
       curl -sfL https://get.k3s.io | sh -
-      echo "Sleeping for 5 seconds to wait for service restart..."
-      sleep 5
+      echo "Sleeping for 20 seconds to wait for service restart..."
+      sleep 20
       echo "K3s installed. Retrieving node token..."
       NODE_TOKEN=$(cat /var/lib/rancher/k3s/server/node-token)
       echo "Node token retrieved: $NODE_TOKEN"
@@ -37,8 +37,8 @@ Vagrant.configure("2") do |config|
     dbelpaumSW.vm.provider "virtualbox" do |vb|
       # vb.memory = "2048"
       # vb.cpus = 2
-      vb.memory = "512"
-      vb.cpus = 1
+      vb.memory = "1024"
+      vb.cpus = 2
     end
     # Worker Script
     dbelpaumSW.vm.provision "shell", inline: <<-SHELL
@@ -52,6 +52,7 @@ Vagrant.configure("2") do |config|
     SHELL
   end
   # sudo kubectl -o wide get nodes
+  # sudo journalctl -u k3s-agent
   # ip addr show eth1
 
 end
