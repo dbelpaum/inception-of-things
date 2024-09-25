@@ -2,14 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: hello-kubernetes-ingress
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
+  # annotations:
+  #   traefik.ingress.kubernetes.io/router.entrypoints: web
+  #   # traefik.ingress.kubernetes.io/router.priority: "1"
 spec:
-  # defaultBackend:
-  #   service:
-  #     name: hello-kubernetes-app3
-  #     port:
-  #       number: 80
   rules:
   - host: app1.com
     http:
@@ -33,6 +29,15 @@ spec:
               number: 80
   - host: app3.com
     http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hello-kubernetes-app3
+            port:
+              number: 80
+  - http:   # Default rule, when no host specified
       paths:
       - path: /
         pathType: Prefix
