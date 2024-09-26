@@ -42,8 +42,35 @@ sudo kubectl wait --for=condition=available --timeout=600s deployment/argocd-ser
 sudo curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo chmod +x /usr/local/bin/argocd
 
-# Argo CD UI
-sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+# Store Argo CD initial admin password
+ARGOCD_PASSWORD=$(sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+# Login to Argo CD
+argocd login --insecure --username admin --password $ARGOCD_PASSWORD --grpc-web localhost:8080
+# Store the password
+echo $ARGOCD_PASSWORD > /home/vagrant/.argocd_password
 
-# Print Argo CD initial admin password
-sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+# # Forward Argo CD UI port
+# # A FAIRE A LA MAIN POUR LE MOMENT
+# sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+
+# GITHUB_REPO_URL="https://github.com/dbelpaum/myapp.git"
+# APP_NAMESPACE="dev"
+# APP_NAME="my-app"
+
+# sudo kubectl create namespace $APP_NAMESPACE
+# argocd app create $APP_NAME \
+#   --repo $GITHUB_REPO_URL \
+#   --path dev \
+#   --dest-server https://kubernetes.default.svc \
+#   --dest-namespace $APP_NAMESPACE \
+#   --sync-policy auto \
+#   --self-heal
+
+# argocd app sync $APP_NAME
+
+# argocd app get $APP_NAME
+
+# echo "Waiting for the app to be fully deployed..."
+# sudo kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=wil-playground -n dev --timeout=600s
+# # A FAIRE A LA MAIN POUR LE MOMENT
+# sudo kubectl port-forward svc/wil-playground -n dev 8888:8888
