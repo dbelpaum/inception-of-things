@@ -24,7 +24,7 @@ sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plug
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 # Create a k3d cluster
-sudo k3d cluster create mycluster # --port 8080:443@server:0 --port 8888:8888@host
+sudo k3d cluster create mycluster
 
 # Install kubectl
 sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -42,7 +42,7 @@ sudo curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/rele
 sudo chmod +x /usr/local/bin/argocd
 
 echo ">>>Forwarding Argo CD UI port..."
-sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 > /dev/null 2>&1 &
 
 echo ">>>Getting Argo CD initial admin password..."
 # Store Argo CD initial admin password
