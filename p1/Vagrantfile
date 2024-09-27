@@ -7,7 +7,6 @@ Vagrant.configure("2") do |config|
   # Server Config
   config.vm.define "dbelpaumS" do |dbelpaumS|
     dbelpaumS.vm.hostname = "dbelpaumS"
-    dbelpaumS.vm.synced_folder "shared", "/shared", create: true
     dbelpaumS.vm.network "private_network", ip: "192.168.56.110"
     dbelpaumS.vm.provider "virtualbox" do |vb|
       # vb.memory = "2048"
@@ -24,15 +23,13 @@ Vagrant.configure("2") do |config|
       echo "K3s installed. Retrieving node token..."
       NODE_TOKEN=$(cat /var/lib/rancher/k3s/server/node-token)
       echo "Node token retrieved: $NODE_TOKEN"
-      echo $NODE_TOKEN > /shared/node_token
+      echo $NODE_TOKEN > /vagrant/node_token
     SHELL
-
   end
 
   # Worker Config
   config.vm.define "dbelpaumSW" do |dbelpaumSW|
     dbelpaumSW.vm.hostname = "dbelpaumSW"
-    dbelpaumSW.vm.synced_folder "shared", "/shared", create: true
     dbelpaumSW.vm.network "private_network", ip: "192.168.56.111"
     dbelpaumSW.vm.provider "virtualbox" do |vb|
       # vb.memory = "2048"
@@ -47,7 +44,7 @@ Vagrant.configure("2") do |config|
         sleep 5
       done
       echo "Server is ready. Installing K3s Agent..."
-      NODE_TOKEN=$(cat /shared/node_token)
+      NODE_TOKEN=$(cat /vagrant/node_token)
       curl -sfL https://get.k3s.io | K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=$NODE_TOKEN sh -
     SHELL
   end
