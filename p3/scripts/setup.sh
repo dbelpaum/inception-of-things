@@ -24,24 +24,27 @@ sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plug
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 # Create a k3d cluster
-sudo k3d cluster create mycluster
+sudo k3d cluster create mycluster # --port 8080:443@server:0 --port 8888:8888@host
 
 # Install kubectl
 sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-# Install Argo CD
+echo ">>>Installing Argo CD..."
 sudo kubectl create namespace argocd
 sudo kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# Wait for Argo CD to be fully deployed
-echo "Waiting for Argo CD to be fully deployed..."
+echo ">>>Waiting for Argo CD to be fully deployed..."
 sudo kubectl wait --for=condition=available --timeout=600s deployment/argocd-server -n argocd
 
-# Install Argo CD CLI
+echo ">>>Installing Argo CD CLI..."
 sudo curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo chmod +x /usr/local/bin/argocd
 
+echo ">>>Forwarding Argo CD UI port..."
+sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+
+echo ">>>Getting Argo CD initial admin password..."
 # Store Argo CD initial admin password
 ARGOCD_PASSWORD=$(sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 # Login to Argo CD
@@ -49,28 +52,31 @@ argocd login --insecure --username admin --password $ARGOCD_PASSWORD --grpc-web 
 # Store the password
 echo $ARGOCD_PASSWORD > /home/vagrant/.argocd_password
 
-# # Forward Argo CD UI port
-# # A FAIRE A LA MAIN POUR LE MOMENT
-# sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+echo ">>>Creating the wil-playground app..."
 
-# GITHUB_REPO_URL="https://github.com/dbelpaum/myapp.git"
-# APP_NAMESPACE="dev"
-# APP_NAME="my-app"
+GITHUB_REPO_URL="https://github.com/dbelpaum/myapp.git"
+APP_NAMESPACE="dev"
+APP_NAME="my-app"
 
-# sudo kubectl create namespace $APP_NAMESPACE
-# argocd app create $APP_NAME \
-#   --repo $GITHUB_REPO_URL \
-#   --path dev \
-#   --dest-server https://kubernetes.default.svc \
-#   --dest-namespace $APP_NAMESPACE \
-#   --sync-policy auto \
-#   --self-heal
+sudo kubectl create namespace $APP_NAMESPACE
+argocd app create $APP_NAME \
+  --repo $GITHUB_REPO_URL \
+  --path dev \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace $APP_NAMESPACE \
+  --sync-policy automated \
+  --self-heal \
+  --auto-prune
 
-# argocd app sync $APP_NAME
+echo ">>>Syncing the Argo CD application..."
+argocd app sync $APP_NAME
 
-# argocd app get $APP_NAME
+echo ">>>Getting the Argo CD application status..."
+argocd app get $APP_NAME
 
-# echo "Waiting for the app to be fully deployed..."
-# sudo kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=wil-playground -n dev --timeout=600s
-# # A FAIRE A LA MAIN POUR LE MOMENT
-# sudo kubectl port-forward svc/wil-playground -n dev 8888:8888
+echo "Waiting for the app to be fully deployed..."
+sleep 30
+sudo kubectl port-forward svc/wil-playground -n dev 8888:8888 > /dev/null 2>&1 &
+sleep 1
+
+echo ">>>Installation completed successfully!"
