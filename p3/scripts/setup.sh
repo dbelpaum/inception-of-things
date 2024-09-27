@@ -24,7 +24,7 @@ sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plug
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 # Create a k3d cluster
-sudo k3d cluster create mycluster
+sudo k3d cluster create mycluster --config /vagrant/confs/k3d-config.yaml
 
 # Install kubectl
 sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -75,8 +75,8 @@ echo ">>>Getting the Argo CD application status..."
 argocd app get $APP_NAME
 
 echo "Waiting for the app to be fully deployed..."
-sleep 30
-sudo kubectl port-forward svc/wil-playground -n dev 8888:8888 > /dev/null 2>&1 &
-sleep 1
+sleep 15
+# sudo kubectl port-forward svc/wil-playground -n dev 8888:8888 > /dev/null 2>&1 &
+# sleep 1
 
 echo ">>>Installation completed successfully!"
