@@ -30,20 +30,53 @@ sudo k3d cluster create mycluster
 sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-# Install Argo CD
+echo ">>>Installing Argo CD..."
 sudo kubectl create namespace argocd
 sudo kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# Wait for Argo CD to be fully deployed
-echo "Waiting for Argo CD to be fully deployed..."
+echo ">>>Waiting for Argo CD to be fully deployed..."
 sudo kubectl wait --for=condition=available --timeout=600s deployment/argocd-server -n argocd
 
-# Install Argo CD CLI
+echo ">>>Installing Argo CD CLI..."
 sudo curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo chmod +x /usr/local/bin/argocd
 
-# Argo CD UI
-sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+echo ">>>Forwarding Argo CD UI port..."
+sudo kubectl port-forward svc/argocd-server -n argocd 8080:443 > /dev/null 2>&1 &
 
-# Print Argo CD initial admin password
-sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+echo ">>>Getting Argo CD initial admin password..."
+# Store Argo CD initial admin password
+ARGOCD_PASSWORD=$(sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+# Login to Argo CD
+argocd login --insecure --username admin --password $ARGOCD_PASSWORD --grpc-web localhost:8080
+# Store the password
+echo $ARGOCD_PASSWORD > /home/vagrant/.argocd_password
+
+echo ">>>Creating the wil-playground app..."
+
+GITHUB_REPO_URL="https://github.com/dbelpaum/myapp.git"
+APP_NAMESPACE="dev"
+APP_NAME="my-app"
+
+sudo kubectl create namespace $APP_NAMESPACE
+argocd app create $APP_NAME \
+  --repo $GITHUB_REPO_URL \
+  --path dev \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace $APP_NAMESPACE \
+  --sync-policy automated \
+  --self-heal \
+  --auto-prune
+
+echo ">>>Syncing the Argo CD application..."
+argocd app sync $APP_NAME
+
+echo ">>>Getting the Argo CD application status..."
+argocd app get $APP_NAME
+
+echo "Waiting for the app to be fully deployed..."
+sleep 30
+sudo kubectl port-forward svc/wil-playground -n dev 8888:8888 > /dev/null 2>&1 &
+sleep 1
+
+echo ">>>Installation completed successfully!"
